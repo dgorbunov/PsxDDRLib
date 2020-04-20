@@ -11,6 +11,7 @@
 - Change Keymappings to not override keyboard?
 - Improve latency
 - Try HSPI
+- Pull request to Psx Lib with HID support.
 
 # Setup
 Configure your Arduino as a generic HID device as described here: http://mitchtech.net/arduino-usb-hid-keyboard/
