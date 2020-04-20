@@ -1,9 +1,16 @@
 # Playstation DDR Arduino Library
 - Support for remapping pad functions
-- Support for Holds
-- Uses Arduino to act as a generic HID device - no drivers required.
-- Any Arduino can be configured as HID device.
+- Support for up to 6 key holds at a time
+- Uses any model of Arduino to act as a generic HID device - no drivers required
 - Tested on Stepmania
+- Low Latency
+
+# TODO:
+- Add general analog support + PS Controller Support
+- Test on Nano
+- Change Keymappings to not override keyboard?
+- Improve latency
+- Try HSPI
 
 # Setup
 Configure your Arduino as a generic HID device as described here: http://mitchtech.net/arduino-usb-hid-keyboard/
