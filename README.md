@@ -1,8 +1,8 @@
 # Playstation DDR Arduino Library
+- Perfect for Stepmania with no key mapping required
 - Support for remapping pad functions
 - Support for up to 6 key holds at a time with two pads
 - Uses any model of Arduino to act as a generic HID device - no drivers required
-- Tested on Stepmania
 - Low Latency
 
 # TODO:
@@ -10,7 +10,6 @@
 - Test on Nano
 - Change Keymappings to not override keyboard?
 - Improve latency
-- Try HSPI
 - Pull request to Psx Lib with HID support.
 
 # Setup
