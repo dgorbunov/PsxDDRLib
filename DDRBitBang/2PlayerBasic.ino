@@ -34,9 +34,6 @@ typedef const __FlashStringHelper * FlashStr;
 typedef const byte* PGM_BYTES_P;
 #define PSTR_TO_F(s) reinterpret_cast<const __FlashStringHelper *> (s)
 
-
-//To add keys, refer to the USB HID Usage Tables: Chapter 10/Page 53
-//https://www.usb.org/sites/default/files/documents/hut1_12v2.pdf
   
 // These can be changed freely when using the bitbanged protocol
 const byte PIN_PS2_ATT = 10;
@@ -44,11 +41,10 @@ const byte PIN_PS2_CMD = 11;
 const byte PIN_PS2_DAT = 12;
 const byte PIN_PS2_CLK = 9;
 
-//const byte PIN_PS2_ATT2 = 10;
-//const byte PIN_PS2_CMD2 = 11;
-//const byte PIN_PS2_DAT2 = 12;
-//const byte PIN_PS2_CLK2 = 9; 
-
+const byte PIN_PS2_ATT_2 = 6;
+const byte PIN_PS2_CMD_2 = 5;
+const byte PIN_PS2_DAT_2 = 4;
+const byte PIN_PS2_CLK_2 = 7;
 
 const byte PIN_BUTTONPRESS = A0;
 const byte PIN_HAVECONTROLLER = A1;
@@ -71,27 +67,29 @@ const char buttonCrossName[] PROGMEM = "Cross";
 const char buttonSquareName[] PROGMEM = "Square";
 
 const char* const psxButtonNames[PSX_BUTTONS_NO] PROGMEM = {
-	buttonSelectName,
-	buttonL3Name,
-	buttonR3Name,
-	buttonStartName,
-	buttonUpName,
-	buttonRightName,
-	buttonDownName,
-	buttonLeftName,
-	buttonL2Name,
-	buttonR2Name,
-	buttonL1Name,
-	buttonR1Name,
-	buttonTriangleName,
-	buttonCircleName,
-	buttonCrossName,
-	buttonSquareName
+  buttonSelectName,
+  buttonL3Name,
+  buttonR3Name,
+  buttonStartName,
+  buttonUpName,
+  buttonRightName,
+  buttonDownName,
+  buttonLeftName,
+  buttonL2Name,
+  buttonR2Name,
+  buttonL1Name,
+  buttonR1Name,
+  buttonTriangleName,
+  buttonCircleName,
+  buttonCrossName,
+  buttonSquareName
 };
 
 
 /// DDR CONFIG \\\
 
+//To add keys, refer to the USB HID Usage Tables: Chapter 10/Page 53
+//https://www.usb.org/sites/default/files/documents/hut1_12v2.pdf
 #define KEY_ENTER   40
 #define KEY_ESCAPE  41
 #define KEY_RIGHT_ARROW 79
@@ -124,9 +122,10 @@ int key[NUM_KEYS] = {
 };
 
 
-void toKeyboard(PsxButtons button){
+void toKeyboard(PsxButtons button, byte psx){
 
-fastDigitalWrite(LED_BUILTIN, HIGH);
+if (psx == 1) fastDigitalWrite(LED_BUILTIN, HIGH);
+else if (psx == 2) fastDigitalWrite(LED_BUILTIN, HIGH);
 
   for (byte n = 0; n < NUM_KEYS; n++){
     if (button == key[n]) {
@@ -143,12 +142,12 @@ fastDigitalWrite(LED_BUILTIN, HIGH);
   }
 }
 
-void releaseKey(PsxButtons button){
+void releaseKey(PsxButtons button, byte psx){
 //  Serial.println("Released");
 //  Serial.print(button);
   buf[0] = 0;
   buf[1] = 0;
-  int buttonCode;
+  byte buttonCode;
   
   for (byte n = 0; n < NUM_KEYS; n++){
     if(button == key[n]){
@@ -167,38 +166,39 @@ void releaseKey(PsxButtons button){
 //         Serial.print(" removed");
          } 
    }
-   int c = 0;
+   byte c = 0;
    for (byte i = 2; i < 9; i++){
     c += buf[i];
    }
-   Serial.println(c);
-   if (c==1) fastDigitalWrite(LED_BUILTIN, LOW);
+   
+   if (c==0 || c == 1 && psx == 1) fastDigitalWrite(LED_BUILTIN, LOW);
+   else if (c==1 || c==0 && psx == 2) fastDigitalWrite(LED_BUILTIN, LOW);
 }
 
 byte psxButtonToIndex (PsxButtons psxButtons) {
-	byte i;
+  byte i;
 
-	for (i = 0; i < PSX_BUTTONS_NO; ++i) {
-		if (psxButtons & 0x01) {
-			break;
-		}
+  for (i = 0; i < PSX_BUTTONS_NO; ++i) {
+    if (psxButtons & 0x01) {
+      break;
+    }
 
-		psxButtons >>= 1U;
-	}
+    psxButtons >>= 1U;
+  }
 
-	return i;
+  return i;
 }
 
 FlashStr getButtonName (PsxButtons psxButton) {
-	FlashStr ret = F("");
-	
-	byte b = psxButtonToIndex (psxButton);
-	if (b < PSX_BUTTONS_NO) {
-		PGM_BYTES_P bName = reinterpret_cast<PGM_BYTES_P> (pgm_read_ptr (&(psxButtonNames[b])));
-		ret = PSTR_TO_F (bName);
-	}
+  FlashStr ret = F("");
+  
+  byte b = psxButtonToIndex (psxButton);
+  if (b < PSX_BUTTONS_NO) {
+    PGM_BYTES_P bName = reinterpret_cast<PGM_BYTES_P> (pgm_read_ptr (&(psxButtonNames[b])));
+    ret = PSTR_TO_F (bName);
+  }
 
-	return ret;
+  return ret;
 }
 
 void dumpButtons (PsxButtons psxButtons) {
@@ -206,11 +206,11 @@ void dumpButtons (PsxButtons psxButtons) {
 }
 
 void dumpAnalog (const char *str, const byte x, const byte y) {
-//	Serial.print (str);
-//	Serial.print (F(" analog: x = "));
-//	Serial.print (x);
-//	Serial.print (F(", y = "));
-//	Serial.println (y);
+//  Serial.print (str);
+//  Serial.print (F(" analog: x = "));
+//  Serial.print (x);
+//  Serial.print (F(", y = "));
+//  Serial.println (y);
 }
 
 
@@ -222,90 +222,96 @@ const char ctrlTypeGuitHero[] PROGMEM = "Guitar Hero";
 const char ctrlTypeOutOfBounds[] PROGMEM = "(Out of bounds)";
 
 const char* const controllerTypeStrings[PSCTRL_MAX + 1] PROGMEM = {
-	ctrlTypeUnknown,
-	ctrlTypeDualShock,
-	ctrlTypeDsWireless,
-	ctrlTypeGuitHero,
-	ctrlTypeOutOfBounds
+  ctrlTypeUnknown,
+  ctrlTypeDualShock,
+  ctrlTypeDsWireless,
+  ctrlTypeGuitHero,
+  ctrlTypeOutOfBounds
 };
 
 
-
-
-
-
-
 PsxControllerBitBang<PIN_PS2_ATT, PIN_PS2_CMD, PIN_PS2_DAT, PIN_PS2_CLK> psx;
+PsxControllerBitBang<PIN_PS2_ATT_2, PIN_PS2_CMD_2, PIN_PS2_DAT_2, PIN_PS2_CLK_2> psx2;
 
 boolean haveController = false;
+boolean haveController2 = false;
  
 void setup () {
-	fastPinMode (PIN_BUTTONPRESS, OUTPUT);
-	fastPinMode (PIN_HAVECONTROLLER, OUTPUT);
+  fastPinMode (PIN_BUTTONPRESS, OUTPUT);
+  fastPinMode (PIN_HAVECONTROLLER, OUTPUT);
   fastPinMode (LED_BUILTIN, OUTPUT);
-	
-	delay (300);
+  
+  delay (300);
 
-	Serial.begin (9600);
-//	Serial.println (F("Ready!"));
+  Serial.begin (9600);
+//  Serial.println (F("Ready!"));
 }
 
 void checkButton(PsxButton button){
     if (psx.buttonJustPressed (button)){
-      toKeyboard(button);
+      toKeyboard(button, 1);
      } 
      else if (psx.buttonJustReleased (button)){
-      releaseKey(button);
+      releaseKey(button, 1);
+     }
+}
+
+void checkButton2(PsxButton button){
+    if (psx2.buttonJustPressed (button)){
+      toKeyboard(button, 2);
+     } 
+     else if (psx2.buttonJustReleased (button)){
+      releaseKey(button, 2);
      }
 }
  
 void loop () {
-	static byte slx, sly, srx, sry;
-	
-	fastDigitalWrite (PIN_HAVECONTROLLER, haveController);
-	
-	if (!haveController) {
-		if (psx.begin ()) {
-//			Serial.println (F("Controller found!"));
+  static byte slx, sly, srx, sry;
+  
+  fastDigitalWrite (PIN_HAVECONTROLLER, haveController);
+  
+  if (!haveController) {
+    if (psx.begin ()) {
+//      Serial.println (F("Controller found!"));
       fastDigitalWrite(LED_BUILTIN, HIGH);
       delay (100);
       fastDigitalWrite(LED_BUILTIN, LOW);
       delay(100);
       fastDigitalWrite(LED_BUILTIN, HIGH);
-			delay (100);
+      delay (100);
       fastDigitalWrite(LED_BUILTIN, LOW);
-			if (!psx.enterConfigMode ()) {
-//				Serial.println (F("Cannot enter config mode"));
-			} else {
-				PsxControllerType ctype = psx.getControllerType ();
-				PGM_BYTES_P cname = reinterpret_cast<PGM_BYTES_P> (pgm_read_ptr (&(controllerTypeStrings[ctype < PSCTRL_MAX ? static_cast<byte> (ctype) : PSCTRL_MAX])));
-//				Serial.print (F("Controller Type is: "));
-//				Serial.println (PSTR_TO_F (cname));
+      if (!psx.enterConfigMode ()) {
+//        Serial.println (F("Cannot enter config mode"));
+      } else {
+        PsxControllerType ctype = psx.getControllerType ();
+        PGM_BYTES_P cname = reinterpret_cast<PGM_BYTES_P> (pgm_read_ptr (&(controllerTypeStrings[ctype < PSCTRL_MAX ? static_cast<byte> (ctype) : PSCTRL_MAX])));
+//        Serial.print (F("Controller Type is: "));
+//        Serial.println (PSTR_TO_F (cname));
 
-				if (!psx.enableAnalogSticks ()) {
-//					Serial.println (F("Cannot enable analog sticks"));
-				}
-				
-				//~ if (!psx.setAnalogMode (false)) {
-					//~ Serial.println (F("Cannot disable analog mode"));
-				//~ }
-				//~ delay (10);
-				
-				if (!psx.enableAnalogButtons ()) {
-//					Serial.println (F("Cannot enable analog buttons"));
-				}
-				
-				if (!psx.exitConfigMode ()) {
-//					Serial.println (F("Cannot exit config mode"));
-				}
-			}
-			
-			haveController = true;
-		}
-	} else {
-		if (!psx.read ()) {
-//			Serial.println (F("Controller lost :("));
-			haveController = false;
+        if (!psx.enableAnalogSticks ()) {
+//          Serial.println (F("Cannot enable analog sticks"));
+        }
+        
+        //~ if (!psx.setAnalogMode (fsalse)) {
+          //~ Serial.println (F("Cannot disable analog mode"));
+        //~ }
+        //~ delay (10);
+        
+        if (!psx.enableAnalogButtons ()) {
+//          Serial.println (F("Cannot enable analog buttons"));
+        }
+        
+        if (!psx.exitConfigMode ()) {
+//          Serial.println (F("Cannot exit config mode"));
+        }
+      }
+      
+      haveController = true;
+    }
+  } else {
+    if (!psx.read ()) {
+//      Serial.println (F("Controller lost :("));
+      haveController = false;
       fastDigitalWrite(LED_BUILTIN, HIGH);
       delay (100);
       fastDigitalWrite(LED_BUILTIN, LOW);
@@ -313,7 +319,7 @@ void loop () {
       fastDigitalWrite(LED_BUILTIN, HIGH);
      delay (100);
       fastDigitalWrite(LED_BUILTIN, LOW);
-		} else {
+    } else {
       
       checkButton(PSB_PAD_UP);
 
@@ -327,24 +333,106 @@ void loop () {
      
       checkButton(PSB_START);
      
-//			byte lx, ly;
-//			psx.getLeftAnalog (lx, ly);
-//			if (lx != slx || ly != sly) {
-//				dumpAnalog ("Left", lx, ly);
-//				slx = lx;
-//				sly = ly;
-//			}
+//      byte lx, ly;
+//      psx.getLeftAnalog (lx, ly);
+//      if (lx != slx || ly != sly) {
+//        dumpAnalog ("Left", lx, ly);
+//        slx = lx;
+//        sly = ly;
+//      }
 //
-//			byte rx, ry;
-//			psx.getRightAnalog (rx, ry);
-//			if (rx != srx || ry != sry) {
-//				dumpAnalog ("Right", rx, ry);
-//				srx = rx;
-//				sry = ry;
-//			}
-		}
-	}
+//      byte rx, ry;
+//      psx.getRightAnalog (rx, ry);
+//      if (rx != srx || ry != sry) {
+//        dumpAnalog ("Right", rx, ry);
+//        srx = rx;
+//        sry = ry;
+//      }
+    }
+  }
+ 
 
-	
-	delay (1000 / 60);
+ if (!haveController2) {
+   if (psx2.begin ()) {
+//      Serial.println (F("Controller2 found!"));
+      fastDigitalWrite(LED_BUILTIN, HIGH);
+      delay (100);
+      fastDigitalWrite(LED_BUILTIN, LOW);
+      delay(100);
+      fastDigitalWrite(LED_BUILTIN, HIGH);
+      delay (100);
+      fastDigitalWrite(LED_BUILTIN, LOW);
+      if (!psx2.enterConfigMode ()) {
+//        Serial.println (F("Cannot enter config mode"));
+      } else {
+        PsxControllerType ctype = psx2.getControllerType ();
+        PGM_BYTES_P cname = reinterpret_cast<PGM_BYTES_P> (pgm_read_ptr (&(controllerTypeStrings[ctype < PSCTRL_MAX ? static_cast<byte> (ctype) : PSCTRL_MAX])));
+//        Serial.print (F("Controller Type is: "));
+//        Serial.println (PSTR_TO_F (cname));
+
+        if (!psx2.enableAnalogSticks ()) {
+//          Serial.println (F("Cannot enable analog sticks"));
+        }
+        
+        //~ if (!psx2.setAnalogMode (false)) {
+          //~ Serial.println (F("Cannot disable analog mode"));
+        //~ }
+        //~ delay (10);
+        
+        if (!psx2.enableAnalogButtons ()) {
+//          Serial.println (F("Cannot enable analog buttons"));
+        }
+        
+        if (!psx2.exitConfigMode ()) {
+//          Serial.println (F("Cannot exit config mode"));
+        }
+      }
+      
+      haveController2 = true;
+    }
+  } else {
+    if (!psx2.read ()) {
+//      Serial.println (F("Controller 2 lost :("));
+      haveController2 = false;
+      fastDigitalWrite(LED_BUILTIN, HIGH);
+      delay (100);
+      fastDigitalWrite(LED_BUILTIN, LOW);
+      delay(100);
+      fastDigitalWrite(LED_BUILTIN, HIGH);
+     delay (100);
+      fastDigitalWrite(LED_BUILTIN, LOW);
+    } else {
+      
+      checkButton2(PSB_PAD_UP);
+
+      checkButton2(PSB_PAD_DOWN);
+     
+      checkButton2(PSB_PAD_RIGHT);
+     
+      checkButton2(PSB_PAD_LEFT);
+     
+      checkButton2(PSB_SELECT);
+     
+      checkButton2(PSB_START);
+     
+//      byte lx, ly;
+//      psx.getLeftAnalog (lx, ly);
+//      if (lx != slx || ly != sly) {
+//        dumpAnalog ("Left", lx, ly);
+//        slx = lx;
+//        sly = ly;
+//      }
+//
+//      byte rx, ry;
+//      psx.getRightAnalog (rx, ry);
+//      if (rx != srx || ry != sry) {
+//        dumpAnalog ("Right", rx, ry);
+//        srx = rx;
+//        sry = ry;
+//      }
+    }
+  }
+  
+  delay (1000 / 60);
+
 }
