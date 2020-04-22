@@ -46,6 +46,10 @@ const byte PIN_PS2_CMD_2 = 5;
 const byte PIN_PS2_DAT_2 = 4;
 const byte PIN_PS2_CLK_2 = 7;
 
+
+#define LED1 3
+#define LED2 2
+
 const byte PIN_BUTTONPRESS = A0;
 const byte PIN_HAVECONTROLLER = A1;
 
@@ -124,8 +128,8 @@ int key[NUM_KEYS] = {
 
 void toKeyboard(PsxButtons button, byte psx){
 
-if (psx == 1) fastDigitalWrite(LED_BUILTIN, HIGH);
-else if (psx == 2) fastDigitalWrite(LED_BUILTIN, HIGH);
+if (psx == 1) fastDigitalWrite(LED1, HIGH);
+else if (psx == 2) fastDigitalWrite(LED2, HIGH);
 
   for (byte n = 0; n < NUM_KEYS; n++){
     if (button == key[n]) {
@@ -171,8 +175,8 @@ void releaseKey(PsxButtons button, byte psx){
     c += buf[i];
    }
    
-   if (c==0 || c == 1 && psx == 1) fastDigitalWrite(LED_BUILTIN, LOW);
-   else if (c==1 || c==0 && psx == 2) fastDigitalWrite(LED_BUILTIN, LOW);
+   if (c==0 && psx == 1) fastDigitalWrite(LED1, LOW); //I'm not sure why c=1 for psx1 and c=0 for psx2
+   else if (c==1 || c==0 && psx == 2) fastDigitalWrite(LED2, LOW);
 }
 
 byte psxButtonToIndex (PsxButtons psxButtons) {
@@ -240,6 +244,8 @@ void setup () {
   fastPinMode (PIN_BUTTONPRESS, OUTPUT);
   fastPinMode (PIN_HAVECONTROLLER, OUTPUT);
   fastPinMode (LED_BUILTIN, OUTPUT);
+  fastPinMode (LED1, OUTPUT);
+  fastPinMode (LED2, OUTPUT);
   
   delay (300);
 
@@ -273,13 +279,13 @@ void loop () {
   if (!haveController) {
     if (psx.begin ()) {
 //      Serial.println (F("Controller found!"));
-      fastDigitalWrite(LED_BUILTIN, HIGH);
+      fastDigitalWrite(LED1, HIGH);
       delay (100);
-      fastDigitalWrite(LED_BUILTIN, LOW);
+      fastDigitalWrite(LED1, LOW);
       delay(100);
-      fastDigitalWrite(LED_BUILTIN, HIGH);
+      fastDigitalWrite(LED1, HIGH);
       delay (100);
-      fastDigitalWrite(LED_BUILTIN, LOW);
+      fastDigitalWrite(LED1, LOW);
       if (!psx.enterConfigMode ()) {
 //        Serial.println (F("Cannot enter config mode"));
       } else {
@@ -312,13 +318,13 @@ void loop () {
     if (!psx.read ()) {
 //      Serial.println (F("Controller lost :("));
       haveController = false;
-      fastDigitalWrite(LED_BUILTIN, HIGH);
+      fastDigitalWrite(LED1, HIGH);
       delay (100);
-      fastDigitalWrite(LED_BUILTIN, LOW);
+      fastDigitalWrite(LED1, LOW);
       delay(100);
-      fastDigitalWrite(LED_BUILTIN, HIGH);
+      fastDigitalWrite(LED1, HIGH);
      delay (100);
-      fastDigitalWrite(LED_BUILTIN, LOW);
+      fastDigitalWrite(LED1, LOW);
     } else {
       
       checkButton(PSB_PAD_UP);
@@ -355,13 +361,13 @@ void loop () {
  if (!haveController2) {
    if (psx2.begin ()) {
 //      Serial.println (F("Controller2 found!"));
-      fastDigitalWrite(LED_BUILTIN, HIGH);
+      fastDigitalWrite(LED2, HIGH);
       delay (100);
-      fastDigitalWrite(LED_BUILTIN, LOW);
+      fastDigitalWrite(LED2, LOW);
       delay(100);
-      fastDigitalWrite(LED_BUILTIN, HIGH);
+      fastDigitalWrite(LED2, HIGH);
       delay (100);
-      fastDigitalWrite(LED_BUILTIN, LOW);
+      fastDigitalWrite(LED2, LOW);
       if (!psx2.enterConfigMode ()) {
 //        Serial.println (F("Cannot enter config mode"));
       } else {
@@ -394,13 +400,13 @@ void loop () {
     if (!psx2.read ()) {
 //      Serial.println (F("Controller 2 lost :("));
       haveController2 = false;
-      fastDigitalWrite(LED_BUILTIN, HIGH);
+      fastDigitalWrite(LED2, HIGH);
       delay (100);
-      fastDigitalWrite(LED_BUILTIN, LOW);
+      fastDigitalWrite(LED2, LOW);
       delay(100);
-      fastDigitalWrite(LED_BUILTIN, HIGH);
+      fastDigitalWrite(LED2, HIGH);
      delay (100);
-      fastDigitalWrite(LED_BUILTIN, LOW);
+      fastDigitalWrite(LED2, LOW);
     } else {
       
       checkButton2(PSB_PAD_UP);
