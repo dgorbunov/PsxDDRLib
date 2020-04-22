@@ -44,6 +44,12 @@ const byte PIN_PS2_CMD = 11;
 const byte PIN_PS2_DAT = 12;
 const byte PIN_PS2_CLK = 9;
 
+//const byte PIN_PS2_ATT2 = 10;
+//const byte PIN_PS2_CMD2 = 11;
+//const byte PIN_PS2_DAT2 = 12;
+//const byte PIN_PS2_CLK2 = 9; 
+
+
 const byte PIN_BUTTONPRESS = A0;
 const byte PIN_HAVECONTROLLER = A1;
 
@@ -121,10 +127,10 @@ int key[NUM_KEYS] = {
 void toKeyboard(PsxButtons button){
 
 fastDigitalWrite(LED_BUILTIN, HIGH);
-  for (int n = 0; n < NUM_KEYS; n++){
+
+  for (byte n = 0; n < NUM_KEYS; n++){
     if (button == key[n]) {
-      for (int i = 2; i < 9; i++) {
-       // Serial.println(buf[i]);
+      for (byte i = 2; i < 9; i++) {
         if(buf[i] == 0) { //check if other bits have been written, 6 possible from 2-8
          buf[i] = code[n];
 //         Serial.println(i);
@@ -140,7 +146,6 @@ fastDigitalWrite(LED_BUILTIN, HIGH);
 void releaseKey(PsxButtons button){
 //  Serial.println("Released");
 //  Serial.print(button);
-fastDigitalWrite(LED_BUILTIN, LOW);
   buf[0] = 0;
   buf[1] = 0;
   int buttonCode;
@@ -151,16 +156,23 @@ fastDigitalWrite(LED_BUILTIN, LOW);
 //      Serial.println(buttonCode);
     }
    }
-   
+
   for (byte i = 2; i < 9; i++) {
         if(buf[i] == buttonCode) { //check if other bits have been written
          buf[i] = 0;
          Serial.write(buf,8); 
          break;
+         
 //          Serial.println(i);
 //         Serial.print(" removed");
          } 
    }
+   int c = 0;
+   for (byte i = 2; i < 9; i++){
+    c += buf[i];
+   }
+   Serial.println(c);
+   if (c==1) fastDigitalWrite(LED_BUILTIN, LOW);
 }
 
 byte psxButtonToIndex (PsxButtons psxButtons) {
@@ -230,12 +242,21 @@ boolean haveController = false;
 void setup () {
 	fastPinMode (PIN_BUTTONPRESS, OUTPUT);
 	fastPinMode (PIN_HAVECONTROLLER, OUTPUT);
-  pinMode (LED_BUILTIN, OUTPUT);
+  fastPinMode (LED_BUILTIN, OUTPUT);
 	
 	delay (300);
 
 	Serial.begin (9600);
 //	Serial.println (F("Ready!"));
+}
+
+void checkButton(PsxButton button){
+    if (psx.buttonJustPressed (button)){
+      toKeyboard(button);
+     } 
+     else if (psx.buttonJustReleased (button)){
+      releaseKey(button);
+     }
 }
  
 void loop () {
@@ -246,12 +267,12 @@ void loop () {
 	if (!haveController) {
 		if (psx.begin ()) {
 //			Serial.println (F("Controller found!"));
-      digitalWrite(LED_BUILTIN, HIGH);
-      delay (250);
-      digitalWrite(LED_BUILTIN, LOW);
-      delay(250);
-      digitalWrite(LED_BUILTIN, HIGH);
-			delay (250);
+      fastDigitalWrite(LED_BUILTIN, HIGH);
+      delay (100);
+      fastDigitalWrite(LED_BUILTIN, LOW);
+      delay(100);
+      fastDigitalWrite(LED_BUILTIN, HIGH);
+			delay (100);
       fastDigitalWrite(LED_BUILTIN, LOW);
 			if (!psx.enterConfigMode ()) {
 //				Serial.println (F("Cannot enter config mode"));
@@ -285,50 +306,26 @@ void loop () {
 		if (!psx.read ()) {
 //			Serial.println (F("Controller lost :("));
 			haveController = false;
+      fastDigitalWrite(LED_BUILTIN, HIGH);
+      delay (100);
+      fastDigitalWrite(LED_BUILTIN, LOW);
+      delay(100);
+      fastDigitalWrite(LED_BUILTIN, HIGH);
+     delay (100);
+      fastDigitalWrite(LED_BUILTIN, LOW);
 		} else {
-			//fastDigitalWrite (PIN_BUTTONPRESS, !!psx.getButtonWord ());
-			//dumpButtons (psx.getButtonWord ());
-     if (psx.buttonJustPressed (PSB_PAD_UP)){
-      toKeyboard(PSB_PAD_UP);
-     } 
-     else if (psx.buttonJustReleased (PSB_PAD_UP)){
-      releaseKey(PSB_PAD_UP);
-     }
+      
+      checkButton(PSB_PAD_UP);
+
+      checkButton(PSB_PAD_DOWN);
      
-     if (psx.buttonJustPressed (PSB_PAD_DOWN)){
-      toKeyboard(PSB_PAD_DOWN);
-     }
-     else if (psx.buttonJustReleased (PSB_PAD_DOWN)){
-      releaseKey(PSB_PAD_DOWN);
-     }
+      checkButton(PSB_PAD_RIGHT);
      
-     if (psx.buttonJustPressed (PSB_PAD_RIGHT)){
-      toKeyboard(PSB_PAD_RIGHT);
-     }
-     else if (psx.buttonJustReleased (PSB_PAD_RIGHT)){
-      releaseKey(PSB_PAD_RIGHT);
-     }
+      checkButton(PSB_PAD_LEFT);
      
-     if (psx.buttonJustPressed (PSB_PAD_LEFT)){
-      toKeyboard(PSB_PAD_LEFT);
-     }
-     else if (psx.buttonJustReleased (PSB_PAD_LEFT)){
-      releaseKey(PSB_PAD_LEFT);
-     }
+      checkButton(PSB_SELECT);
      
-     if (psx.buttonJustPressed (PSB_SELECT)){
-      toKeyboard(PSB_SELECT);
-     }
-     else if (psx.buttonJustReleased (PSB_SELECT)){
-      releaseKey(PSB_SELECT);
-     }
-     
-     if (psx.buttonJustPressed (PSB_START)){
-      toKeyboard(PSB_START);
-     }
-     else if (psx.buttonJustReleased (PSB_START)){
-      releaseKey(PSB_START);
-     }
+      checkButton(PSB_START);
      
 //			byte lx, ly;
 //			psx.getLeftAnalog (lx, ly);
