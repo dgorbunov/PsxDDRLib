@@ -1,6 +1,6 @@
 # Playstation DDR Arduino Library
 - Support for remapping pad functions
-- Support for up to 6 key holds at a time
+- Support for up to 6 key holds at a time with two pads
 - Uses any model of Arduino to act as a generic HID device - no drivers required
 - Tested on Stepmania
 - Low Latency
