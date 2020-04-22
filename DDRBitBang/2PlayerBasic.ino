@@ -90,13 +90,21 @@ const char* const psxButtonNames[PSX_BUTTONS_NO] PROGMEM = {
 
 //To add keys, refer to the USB HID Usage Tables: Chapter 10/Page 53
 //https://www.usb.org/sites/default/files/documents/hut1_12v2.pdf
+
+//By default, these will map to the standard StepMania key mappings.
 #define KEY_ENTER   40
 #define KEY_ESCAPE  41
 #define KEY_RIGHT_ARROW 79
 #define KEY_LEFT_ARROW  80
 #define KEY_DOWN_ARROW  81
 #define KEY_UP_ARROW    82
-#define NUM_KEYS 6 //total #keys you are mapping
+#define KEYPAD_2 90
+#define KEYPAD_4 92
+#define KEYPAD_6 94
+#define KEYPAD_8 96
+#define KEY_MINUS 45
+#define KEYPAD_ENTER 88
+#define NUM_KEYS 6 // #keys you are mapping PER PAD
 
 uint8_t buf[8] = { 
   0 };   /* Keyboard report buffer */
@@ -109,9 +117,19 @@ int code[NUM_KEYS] = {
   KEY_DOWN_ARROW,
   KEY_UP_ARROW
 };
+//Both codes must be in same order
+int code2[NUM_KEYS] = {
+  KEYPAD_ENTER,
+  KEY_MINUS,
+  KEYPAD_6,
+  KEYPAD_4,
+  KEYPAD_2,
+  KEYPAD_8
+};
 
 //Reference PsxNewLib.h in library files for hex numbers
 //that are assigned to each button, convert to decimaal
+//Must be in same order as codes above
 int key[NUM_KEYS] = {
    8,
    1,
@@ -121,12 +139,10 @@ int key[NUM_KEYS] = {
    16
 };
 
-
 void toKeyboard(PsxButtons button, byte psx){
 
-if (psx == 1) fastDigitalWrite(LED_BUILTIN, HIGH);
-else if (psx == 2) fastDigitalWrite(LED_BUILTIN, HIGH);
-
+if (psx == 1)  {
+  fastDigitalWrite(LED_BUILTIN, HIGH);
   for (byte n = 0; n < NUM_KEYS; n++){
     if (button == key[n]) {
       for (byte i = 2; i < 9; i++) {
@@ -140,6 +156,24 @@ else if (psx == 2) fastDigitalWrite(LED_BUILTIN, HIGH);
       } 
     }
   }
+ }
+ 
+if (psx == 2)  {
+  fastDigitalWrite(LED_BUILTIN, HIGH);
+  for (byte n = 0; n < NUM_KEYS; n++){
+    if (button == key[n]) {
+      for (byte i = 2; i < 9; i++) {
+        if(buf[i] == 0) { //check if other bits have been written, 6 possible from 2-8
+         buf[i] = code2[n];
+//         Serial.println(i);
+//         Serial.print(" modified");
+         Serial.write(buf,8);
+         break; 
+         }
+      } 
+    }
+  }
+ }
 }
 
 void releaseKey(PsxButtons button, byte psx){
@@ -149,12 +183,24 @@ void releaseKey(PsxButtons button, byte psx){
   buf[1] = 0;
   byte buttonCode;
   
+ if (psx == 1)  {
   for (byte n = 0; n < NUM_KEYS; n++){
     if(button == key[n]){
       buttonCode = code[n]; 
 //      Serial.println(buttonCode);
     }
    }
+ } 
+
+ 
+ if (psx == 2)  {
+  for (byte n = 0; n < NUM_KEYS; n++){
+    if(button == key[n]){
+      buttonCode = code2[n]; 
+//      Serial.println(buttonCode);
+    }
+   }
+ }
 
   for (byte i = 2; i < 9; i++) {
         if(buf[i] == buttonCode) { //check if other bits have been written
@@ -171,7 +217,7 @@ void releaseKey(PsxButtons button, byte psx){
     c += buf[i];
    }
    
-   if (c==0 || c == 1 && psx == 1) fastDigitalWrite(LED_BUILTIN, LOW);
+   if (c==0 && psx == 1) fastDigitalWrite(LED_BUILTIN, LOW); //I'm not sure why c=1 for psx1 and c=0 for psx2
    else if (c==1 || c==0 && psx == 2) fastDigitalWrite(LED_BUILTIN, LOW);
 }
 
