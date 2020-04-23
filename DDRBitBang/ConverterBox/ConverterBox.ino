@@ -143,7 +143,7 @@ int key[NUM_KEYS] = {
    16
 };
 
-void toKeyboard(PsxButtons button, byte psx){
+void toKeyboard(PsxButtons button, byte psx, bool& pushUpdate){
 
 if (psx == 1)  {
   fastDigitalWrite(LED1, HIGH);
@@ -154,15 +154,14 @@ if (psx == 1)  {
          buf[i] = code[n];
 //         Serial.println(i);
 //         Serial.print(" modified");
-         Serial.write(buf,8);
+//         Serial.write(buf,8);
+           pushUpdate = true;
          break; 
          }
       } 
     }
   }
- }
- 
-if (psx == 2)  {
+ } else if (psx == 2)  {
   fastDigitalWrite(LED2, HIGH);
   for (byte n = 0; n < NUM_KEYS; n++){
     if (button == key[n]) {
@@ -171,7 +170,8 @@ if (psx == 2)  {
          buf[i] = code2[n];
 //         Serial.println(i);
 //         Serial.print(" modified");
-         Serial.write(buf,8);
+        // Serial.write(buf,8);
+        pushUpdate = true;
          break; 
          }
       } 
@@ -180,7 +180,7 @@ if (psx == 2)  {
  }
 }
 
-void releaseKey(PsxButtons button, byte psx){
+void releaseKey(PsxButtons button, byte psx, bool& pushUpdate){
 //  Serial.println("Released");
 //  Serial.print(button);
   buf[0] = 0;
@@ -194,10 +194,7 @@ void releaseKey(PsxButtons button, byte psx){
 //      Serial.println(buttonCode);
     }
    }
- } 
-
- 
- if (psx == 2)  {
+ } else if (psx == 2)  {
   for (byte n = 0; n < NUM_KEYS; n++){
     if(button == key[n]){
       buttonCode = code2[n]; 
@@ -209,7 +206,8 @@ void releaseKey(PsxButtons button, byte psx){
   for (byte i = 2; i < 9; i++) {
         if(buf[i] == buttonCode) { //check if other bits have been written
          buf[i] = 0;
-         Serial.write(buf,8); 
+         // Serial.write(buf,8); 
+         pushUpdate = true;
          break;
          
 //          Serial.println(i);
@@ -300,23 +298,34 @@ void setup () {
 }
 
 void checkButton(PsxButton button){
+  bool pushUpdate = false;
     if (psx.buttonJustPressed (button)){
-      toKeyboard(button, 1);
+      toKeyboard(button, 1, pushUpdate);
      } 
      else if (psx.buttonJustReleased (button)){
-      releaseKey(button, 1);
+      releaseKey(button, 1, pushUpdate);
      }
 }
 
 void checkButton2(PsxButton button){
+  bool pushUpdate = false;
     if (psx2.buttonJustPressed (button)){
-      toKeyboard(button, 2);
+      toKeyboard(button, 2, pushUpdate);
      } 
      else if (psx2.buttonJustReleased (button)){
-      releaseKey(button, 2);
+      releaseKey(button, 2, pushUpdate);
      }
 }
- 
+
+PsxButton psxbutton2[NUM_KEYS] = {
+  PSB_PAD_UP,
+  PSB_PAD_DOWN,
+  PSB_PAD_RIGHT,
+  PSB_PAD_LEFT,
+  PSB_SELECT,
+  PSB_START
+};
+      
 void loop () {
   static byte slx, sly, srx, sry;
   
@@ -372,7 +381,8 @@ void loop () {
      delay (100);
       fastDigitalWrite(LED1, LOW);
     } else {
-      
+
+      /*
       checkButton(PSB_PAD_UP);
 
       checkButton(PSB_PAD_DOWN);
@@ -383,7 +393,24 @@ void loop () {
      
       checkButton(PSB_SELECT);
      
-      checkButton(PSB_START);
+      checkButton(PSB_START);      
+*/
+
+      bool pushUpdate = false;
+      
+      for (byte b = 0; b < NUM_KEYS; b++) {
+
+        PsxButton button = psxbutton2[b];
+      if (psx.buttonJustPressed (button)){
+      toKeyboard(button, 1, pushUpdate);
+     } 
+     else if (psx.buttonJustReleased (button)){
+      releaseKey(button, 1, pushUpdate);
+     }
+      }
+      if (pushUpdate) {
+        Serial.write(buf,8);
+      }
      
 //      byte lx, ly;
 //      psx.getLeftAnalog (lx, ly);
@@ -454,7 +481,7 @@ void loop () {
      delay (100);
       fastDigitalWrite(LED2, LOW);
     } else {
-      
+ /*     
       checkButton2(PSB_PAD_UP);
 
       checkButton2(PSB_PAD_DOWN);
@@ -466,7 +493,24 @@ void loop () {
       checkButton2(PSB_SELECT);
      
       checkButton2(PSB_START);
-     
+     */
+
+      bool pushUpdate = false;
+      
+      for (byte b = 0; b < NUM_KEYS; b++) {
+
+        PsxButton button = psxbutton2[b];
+      if (psx.buttonJustPressed (button)){
+      toKeyboard(button, 2, pushUpdate);
+     } 
+     else if (psx.buttonJustReleased (button)){
+      releaseKey(button, 2, pushUpdate);
+     }
+      }
+      if (pushUpdate) {
+        Serial.write(buf,8);
+      }
+           
 //      byte lx, ly;
 //      psx.getLeftAnalog (lx, ly);
 //      if (lx != slx || ly != sly) {
